@@ -1,0 +1,138 @@
+// Import libraries
+#include <Arduino.h>
+#include <U8x8lib.h>
+
+// Make synonyms using #define.  No semi-colons needed here.
+#define MOSFET 2   // The MOSFET driver for the water pump on digital I/O 2
+#define REDLED 4   // Big red LED on digital I/O 4
+#define BUTTON 6   // Push button on digital I/O 6
+#define MOISTURE A1
+#define WET_THRESH 600 // below 600 is considered wet 
+#define BUZZER 5 // buzzer 
+
+// Creates an instance of the `U8X8_SSD1306_128X64_NONAME_HW_I2C` class
+auto display = U8X8_SSD1306_128X64_NONAME_HW_I2C(U8X8_PIN_NONE);
+
+// Set up variable for measuring time.
+unsigned long elapsedTime = 0;       // "global" variable as long integer, positive values only.
+unsigned long startTime = 0;         // "global" variable as long integer, positive values only.
+int moistureValue = 0;
+
+
+/* -------------- Initialize the Grove board ------------- */
+void setup() {
+    pinMode(MOSFET, OUTPUT); // Sets the D2 pin (MOSFET + Pump) to output
+    pinMode(REDLED, OUTPUT); // Sets the D4 pin (LED) to output
+    pinMode(BUTTON, INPUT); // Sets the D6 pin (Button) to input
+    digitalWrite(MOSFET, LOW);    // pump off
+    Serial.begin(9600);
+    display.begin(); // start up the OLED display
+    display.setFlipMode(0); // set to 1 or 0, depending on orientation of board
+    display.clearDisplay();                     // blank display
+    display.setFont(u8x8_font_profont29_2x3_r); // set font
+
+    // Record initial time.
+    startTime = millis();
+}
+
+void loop(){
+  Water();
+  Java();
+  myfunction();
+  sendJava();
+  buzzer();
+
+
+moistureValue = analogRead(MOISTURE);
+
+//place the cursor at positon x = 0 , y= 0 
+display.setCursor(0,0);
+display.print("A1: " + String(moistureValue));
+}
+
+// auto detecting moisture value and water 
+void Water(){
+
+if (moistureValue <= WET_THRESH){
+  digitalWrite(MOSFET, LOW); // pumpo on  
+ 
+}
+
+ else {
+  digitalWrite(MOSFET, HIGH); // pumpo on 
+  
+ 
+  
+}
+}
+  
+void sendJava(){
+   const auto value = analogRead(MOISTURE);
+    const byte data[] = {0, 0, highByte(value), lowByte(value)};
+
+    Serial.write(data, 4);
+    Serial.println();
+}
+
+
+
+// turn on the pump using java button 
+
+void Java(){
+if (!Serial.available()) {
+ return;
+ }
+ const auto receivedData = Serial.read();
+ // format the data
+ char buf[16];
+ sprintf(buf, "%03d", receivedData);
+ 
+ if(receivedData<100)  {
+ digitalWrite(MOSFET,LOW);
+ }
+ else if (receivedData == 255) 
+ {
+ digitalWrite(MOSFET,HIGH);
+ delay(2000);
+ }
+ else {
+ digitalWrite(MOSFET,LOW);
+ }
+  
+}
+void myfunction(){
+  if(!Serial.available()){
+    return;
+  }
+  const auto receivedData = Serial.read();
+  char buf[16];
+ sprintf(buf, "%03d", receivedData);
+  
+ if(receivedData<100)  {
+ digitalWrite(MOSFET,LOW);
+ }
+ else if (receivedData == 255) 
+ {
+ digitalWrite(MOSFET,HIGH);
+ delay(2000);
+ }
+ else {
+ digitalWrite(MOSFET,LOW);
+ }
+  
+}
+
+
+void buzzer(){  // buzzer on for certain value proportional to the slider values
+  if (!Serial.available()) {
+ return;}
+ const auto sliderData = Serial.read();
+ char buf [16];
+ sprintf(buf, "%03d", sliderData);
+ if(sliderData > 100){
+ analogWrite(BUZZER,HIGH);
+
+  // put your main code here, to run repeatedly:
+
+}
+}
